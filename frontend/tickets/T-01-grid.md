@@ -6,12 +6,12 @@
 
 ## 完了条件
 
-- [ ] `frontend/` に Vite + React + TypeScript のプロジェクトが作られている
-- [ ] Tailwind CSS が動作している
-- [ ] `src/types/map.ts` に `CLAUDE.md` の型定義がそのまま置かれている
-- [ ] 10 列 × 8 行の方眼が画面中央に表示される
-- [ ] セルサイズが定数として 1 箇所に定義されている
-- [ ] `npm run build` が型エラーなく通る
+- [×] `frontend/` に Vite + React + TypeScript のプロジェクトが作られている
+- [×] Tailwind CSS が動作している
+- [×] `src/types/map.ts` に `CLAUDE.md` の型定義がそのまま置かれている
+- [×] 10 列 × 8 行の方眼が画面中央に表示される
+- [×] セルサイズが定数として 1 箇所に定義されている
+- [×] `npm run build` が型エラーなく通る
 
 ## 実装メモ
 
