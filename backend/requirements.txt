@@ -1,0 +1,6 @@
+# Floor pins (>=) so wheels resolve on the local Python (tested on 3.14).
+fastapi>=0.141
+uvicorn[standard]>=0.34
+pydantic>=2.13
+numpy>=2.5
+httpx>=0.28   # for TestClient / tests
