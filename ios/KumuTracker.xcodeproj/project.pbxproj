@@ -1,0 +1,357 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0191191E7B06F69C2B8BC46D /* PersonTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9D5B3C9C1033BC11105D1F1 /* PersonTracker.swift */; };
+		1402B18138262A84A8544330 /* AppearanceColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3D42908287AD803BA471939 /* AppearanceColor.swift */; };
+		285566557C188F5617DCAD3D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B012D6CED6928B0F7DDCE38B /* ContentView.swift */; };
+		42B088313596C888A1A9869E /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8DC119C544704513BC828F /* APIClient.swift */; };
+		4EE31171B6F7D3CBF712532C /* IngestModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9AC6F2F33D57BE739BC275F /* IngestModels.swift */; };
+		540BBF1D60050A20DECD7624 /* TrackingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2D6E84D32548FC5FB3CBAF7 /* TrackingViewModel.swift */; };
+		DBA6493231AD21617B083B71 /* CameraSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F168E464BA050208DC75056 /* CameraSession.swift */; };
+		FF7F422315048E44DEB4184B /* KumuTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFEF807826B2AF4BDA138C0F /* KumuTrackerApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		3F168E464BA050208DC75056 /* CameraSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSession.swift; sourceTree = "<group>"; };
+		B012D6CED6928B0F7DDCE38B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B38C1EE21FB2A0BAFEBB6C56 /* KumuTracker.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = KumuTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C9AC6F2F33D57BE739BC275F /* IngestModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngestModels.swift; sourceTree = "<group>"; };
+		D3D42908287AD803BA471939 /* AppearanceColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceColor.swift; sourceTree = "<group>"; };
+		D9D5B3C9C1033BC11105D1F1 /* PersonTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonTracker.swift; sourceTree = "<group>"; };
+		E269E34DAD7E5287546B95F3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E2D6E84D32548FC5FB3CBAF7 /* TrackingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingViewModel.swift; sourceTree = "<group>"; };
+		EF8DC119C544704513BC828F /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		EFEF807826B2AF4BDA138C0F /* KumuTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KumuTrackerApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		1F0E785AAF7AA2248473B26C /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				C9AC6F2F33D57BE739BC275F /* IngestModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		28A4D0D1F186D81A96CAA9E2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B38C1EE21FB2A0BAFEBB6C56 /* KumuTracker.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3BF59DF78DB63D3694C048D1 /* Tracking */ = {
+			isa = PBXGroup;
+			children = (
+				D3D42908287AD803BA471939 /* AppearanceColor.swift */,
+				3F168E464BA050208DC75056 /* CameraSession.swift */,
+				D9D5B3C9C1033BC11105D1F1 /* PersonTracker.swift */,
+			);
+			path = Tracking;
+			sourceTree = "<group>";
+		};
+		4124E8958F2AAA60CE917EAE = {
+			isa = PBXGroup;
+			children = (
+				E2794C3DB926F0B7DB786368 /* KumuTracker */,
+				28A4D0D1F186D81A96CAA9E2 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		66CD7205A172B0E0AEEABE3A /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B012D6CED6928B0F7DDCE38B /* ContentView.swift */,
+				E2D6E84D32548FC5FB3CBAF7 /* TrackingViewModel.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		94F19F62C0CEF3174F8117F3 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				EF8DC119C544704513BC828F /* APIClient.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		E2794C3DB926F0B7DB786368 /* KumuTracker */ = {
+			isa = PBXGroup;
+			children = (
+				E269E34DAD7E5287546B95F3 /* Info.plist */,
+				EFEF807826B2AF4BDA138C0F /* KumuTrackerApp.swift */,
+				1F0E785AAF7AA2248473B26C /* Models */,
+				94F19F62C0CEF3174F8117F3 /* Networking */,
+				3BF59DF78DB63D3694C048D1 /* Tracking */,
+				66CD7205A172B0E0AEEABE3A /* Views */,
+			);
+			path = KumuTracker;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		EE326DB898B84EC4E20E78FC /* KumuTracker */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 397734DEF98E079CF1DDDB91 /* Build configuration list for PBXNativeTarget "KumuTracker" */;
+			buildPhases = (
+				4A794A8B01FA95DF5F433328 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = KumuTracker;
+			packageProductDependencies = (
+			);
+			productName = KumuTracker;
+			productReference = B38C1EE21FB2A0BAFEBB6C56 /* KumuTracker.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BF4F5F365ACF94306BEB5A9B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					EE326DB898B84EC4E20E78FC = {
+						DevelopmentTeam = "";
+					};
+				};
+			};
+			buildConfigurationList = 8741F25B7D17687B255263BC /* Build configuration list for PBXProject "KumuTracker" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 4124E8958F2AAA60CE917EAE;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 28A4D0D1F186D81A96CAA9E2 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				EE326DB898B84EC4E20E78FC /* KumuTracker */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4A794A8B01FA95DF5F433328 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				42B088313596C888A1A9869E /* APIClient.swift in Sources */,
+				1402B18138262A84A8544330 /* AppearanceColor.swift in Sources */,
+				DBA6493231AD21617B083B71 /* CameraSession.swift in Sources */,
+				285566557C188F5617DCAD3D /* ContentView.swift in Sources */,
+				4EE31171B6F7D3CBF712532C /* IngestModels.swift in Sources */,
+				FF7F422315048E44DEB4184B /* KumuTrackerApp.swift in Sources */,
+				0191191E7B06F69C2B8BC46D /* PersonTracker.swift in Sources */,
+				540BBF1D60050A20DECD7624 /* TrackingViewModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0D30786E35AF30045BEB0AA8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		3D99ADDC488C0E1F06A3C442 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = KumuTracker/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.kumu.demo.tracker;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		9AD70B59F81D48904AC8F132 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = KumuTracker/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.kumu.demo.tracker;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		E969618451BC77D6D9EAB13A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		397734DEF98E079CF1DDDB91 /* Build configuration list for PBXNativeTarget "KumuTracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3D99ADDC488C0E1F06A3C442 /* Debug */,
+				9AD70B59F81D48904AC8F132 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8741F25B7D17687B255263BC /* Build configuration list for PBXProject "KumuTracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E969618451BC77D6D9EAB13A /* Debug */,
+				0D30786E35AF30045BEB0AA8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BF4F5F365ACF94306BEB5A9B /* Project object */;
+}
