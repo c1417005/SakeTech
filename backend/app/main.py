@@ -10,14 +10,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import db
+from app.config import cors_origins
 from app.routes import router
 
 app = FastAPI(title="KUMU Backend", version="0.1.0")
 
-# Frontend (Vite dev server, separate origin) calls these APIs.
+# The browser frontend (Vite dev server, separate origin) calls these APIs.
+# Allowlist is dev origins by default; override via KUMU_CORS_ORIGINS in prod.
+# The iOS app uses a native HTTP client, so CORS does not apply to it.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten for production
+    allow_origins=cors_origins(),
     allow_methods=["*"],
     allow_headers=["*"],
 )

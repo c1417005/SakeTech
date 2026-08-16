@@ -2,6 +2,8 @@
 backend; they are called out in docs/backend-design.md and need human sign-off.
 """
 
+import os
+
 # Grid is fixed by the map spec (10x8).
 GRID_WIDTH = 10
 GRID_HEIGHT = 8
@@ -33,3 +35,23 @@ APPEARANCE_FIELDS = ["upper_color", "lower_color", "bag_color"]
 SAKENOWA_BASE = "https://muro.sakenowa.com/sakenowa-data/api/"
 ISHIKAWA_AREA_ID = 17
 SAKENOWA_ATTRIBUTION = "この銘柄情報は「さけのわデータ」(https://sakenowa.com) を利用しています。"
+
+# --- CORS ---
+# Only the browser-based frontend is subject to CORS; the iOS app uses a native
+# HTTP client and is unaffected. Default to local Vite dev/preview origins so
+# `pnpm dev` works out of the box. In production set KUMU_CORS_ORIGINS to a
+# comma-separated allowlist of real origins (e.g. "https://kumu.example.com").
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:5173",   # vite dev
+    "http://127.0.0.1:5173",
+    "http://localhost:4173",   # vite preview
+    "http://127.0.0.1:4173",
+]
+
+
+def cors_origins() -> list[str]:
+    """Allowed CORS origins: KUMU_CORS_ORIGINS (comma-separated) or dev defaults."""
+    raw = os.environ.get("KUMU_CORS_ORIGINS", "").strip()
+    if raw:
+        return [o.strip() for o in raw.split(",") if o.strip()]
+    return list(DEFAULT_CORS_ORIGINS)
