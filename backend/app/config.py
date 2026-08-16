@@ -85,3 +85,14 @@ def cors_origins() -> list[str]:
     if raw:
         return [o.strip() for o in raw.split(",") if o.strip()]
     return list(DEFAULT_CORS_ORIGINS)
+
+
+# --- optional auth ---
+# Login is OPTIONAL and NON-BLOCKING: public endpoints never require it, so the
+# product works with no login UI. When KUMU_ADMIN_AUTH is truthy, /admin/*
+# additionally requires a valid bearer token (obtained via /auth/login). Default
+# off => admin endpoints behave exactly as before.
+def admin_auth_enabled() -> bool:
+    return os.environ.get("KUMU_ADMIN_AUTH", "").strip().lower() in (
+        "1", "true", "yes", "on",
+    )
