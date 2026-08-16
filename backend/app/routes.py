@@ -14,7 +14,7 @@ import time
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import ValidationError
 
-from app import db, geometry, sakenowa
+from app import config, db, geometry, sakenowa
 from app.models import (
     MapData, Shelf, Marker, Session, IngestBatch, Brand, CalibrationRequest,
 )
@@ -91,6 +91,10 @@ def post_ingest(batch: IngestBatch):
     the MVP naive scaling (normalized * grid size). Behavior is unchanged for
     uncalibrated cameras.
     """
+    if len(batch.detections) > config.MAX_INGEST_DETECTIONS:
+        raise HTTPException(
+            413, f"too many detections: {len(batch.detections)} "
+                 f"> {config.MAX_INGEST_DETECTIONS}")
     m = db.load_map() or {"objects": [], "grid": {"width": 10, "height": 8}}
     gw = m.get("grid", {}).get("width", 10)
     gh = m.get("grid", {}).get("height", 8)

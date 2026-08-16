@@ -58,6 +58,10 @@ BODY_RICH = _env_float("KUMU_BODY_RICH", 0.40)    # f3 (重厚) >= => rich body
 # --- appearance tags --- [TBD: MVP = clothing color only]
 APPEARANCE_FIELDS = ["upper_color", "lower_color", "bag_color"]
 
+# --- ingest limits --- guard against oversized/abusive batches (one frame's
+# detections is small; hundreds means a bug or bad client). Overridable.
+MAX_INGEST_DETECTIONS = _env_int("KUMU_MAX_INGEST_DETECTIONS", 500)
+
 SAKENOWA_BASE = "https://muro.sakenowa.com/sakenowa-data/api/"
 ISHIKAWA_AREA_ID = 17
 SAKENOWA_ATTRIBUTION = "この銘柄情報は「さけのわデータ」(https://sakenowa.com) を利用しています。"

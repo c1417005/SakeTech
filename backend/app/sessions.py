@@ -9,6 +9,7 @@ Both emit the same `Session` shape so GET /sessions is identical either way.
 """
 from __future__ import annotations
 
+import threading
 import time
 
 from app import config, geometry, inference, db
@@ -33,50 +34,72 @@ def _brands_of_shelf(objects, shelf_id):
 
 
 class SessionStore:
-    """Fed by real iOS ingest. Recomputes state/dwell/profile per observation."""
+    """Fed by real iOS ingest. Recomputes state/dwell/profile per observation.
+
+    Thread-safe: FastAPI runs sync path operations in a worker threadpool, so
+    /ingest (observe) and /sessions (prune+read) can run on different threads at
+    once. A lock guards the shared dict; `sessions()` snapshots under the lock
+    and builds the response outside it, so DB lookups don't hold the lock.
+    """
 
     def __init__(self, ttl_sec: float = 30.0):
         self.ttl_sec = ttl_sec
         self._s: dict[str, dict] = {}
+        self._lock = threading.Lock()
 
     def observe(self, objects, session_id, cell_x, cell_y, t,
                 appearance_tags=None):
-        s = self._s.get(session_id)
-        if s is None:
-            s = {"first_t": t, "shelf_id": None, "shelf_start": t,
-                 "dwell_by_brand": {}, "appearance": [], "last_t": t}
-            self._s[session_id] = s
+        with self._lock:
+            s = self._s.get(session_id)
+            if s is None:
+                s = {"first_t": t, "shelf_id": None, "shelf_start": t,
+                     "dwell_by_brand": {}, "appearance": [], "last_t": t}
+                self._s[session_id] = s
 
-        shelf_id = geometry.shelf_at(cell_x, cell_y, objects)
-        dt = max(0.0, t - s["last_t"])
+            shelf_id = geometry.shelf_at(cell_x, cell_y, objects)
+            dt = max(0.0, t - s["last_t"])
 
-        if shelf_id != s["shelf_id"]:
-            s["shelf_id"] = shelf_id
-            s["shelf_start"] = t
-        if shelf_id is not None:
-            for bid in _brands_of_shelf(objects, shelf_id):
-                s["dwell_by_brand"][bid] = s["dwell_by_brand"].get(bid, 0.0) + dt
+            if shelf_id != s["shelf_id"]:
+                s["shelf_id"] = shelf_id
+                s["shelf_start"] = t
+            if shelf_id is not None:
+                for bid in _brands_of_shelf(objects, shelf_id):
+                    s["dwell_by_brand"][bid] = s["dwell_by_brand"].get(bid, 0.0) + dt
 
-        if appearance_tags:
-            s["appearance"] = appearance_tags
-        s["last_t"] = t
-        s["x"], s["y"] = cell_x, cell_y
+            if appearance_tags:
+                s["appearance"] = appearance_tags
+            s["last_t"] = t
+            s["x"], s["y"] = cell_x, cell_y
 
     def prune(self, now: float | None = None):
         now = now or time.time()
-        for sid in [k for k, v in self._s.items() if now - v["last_t"] > self.ttl_sec]:
-            del self._s[sid]
+        with self._lock:
+            stale = [k for k, v in self._s.items()
+                     if now - v["last_t"] > self.ttl_sec]
+            for sid in stale:
+                del self._s[sid]
 
     def sessions(self) -> list[Session]:
+        # Snapshot under the lock (copy mutable inner state), then build the
+        # response — including DB lookups in infer_profile — without the lock.
+        with self._lock:
+            snapshot = [(sid, {
+                "first_t": s["first_t"], "shelf_id": s["shelf_id"],
+                "shelf_start": s["shelf_start"], "last_t": s["last_t"],
+                "x": s.get("x", 0), "y": s.get("y", 0),
+                "appearance": list(s.get("appearance", [])),
+                "dwell_by_brand": dict(s["dwell_by_brand"]),
+            }) for sid, s in self._s.items()]
+
         out = []
-        for sid, s in self._s.items():
+        for sid, s in snapshot:
             dwell = s["last_t"] - s["shelf_start"] if s["shelf_id"] else 0.0
             out.append(Session(
-                session_id=sid, x=s.get("x", 0), y=s.get("y", 0),
+                session_id=sid, x=s["x"], y=s["y"],
                 state=_state_for(s["shelf_id"], dwell),
                 dwell_sec=int(dwell), shelf_id=s["shelf_id"],
                 elapsed_sec=int(s["last_t"] - s["first_t"]),
-                appearance_tags=s.get("appearance", []),
+                appearance_tags=s["appearance"],
                 profile=inference.infer_profile(s["dwell_by_brand"]),
             ))
         return out
