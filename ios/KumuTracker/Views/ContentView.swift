@@ -92,54 +92,51 @@ struct SessionsView: View {
                              : "「更新」でバックエンドのデモデータを取得します")
                     }
                 } else {
-                    List(vm.sessions) { s in
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text(s.session_id).font(.headline)
-                                Spacer()
-                                Text(s.state)
-                                    .font(.caption).bold()
-                                    .padding(.horizontal, 8).padding(.vertical, 2)
-                                    .background(s.state == "moving" ? Color.blue.opacity(0.2)
-                                                                     : Color.green.opacity(0.2))
-                                    .clipShape(Capsule())
-                            }
-                            Text("位置 (\(s.x), \(s.y))・滞在 \(s.dwell_sec)s・経過 \(s.elapsed_sec)s")
-                                .font(.subheadline).foregroundStyle(.secondary)
-                            if let shelf = s.shelf_id {
-                                Text("棚: \(shelf)").font(.caption)
-                            }
-                            if !s.appearance_tags.isEmpty {
-                                Text(s.appearance_tags.joined(separator: "・"))
-                                    .font(.caption).foregroundStyle(.secondary)
-                            }
-                            if let p = s.profile {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "sparkles")
-                                    Text("嗜好: \(p.tags.joined(separator: "・")) (\(p.confidence))")
-                                }
-                                .font(.caption).foregroundStyle(.purple)
-                            }
+                    List {
+                        Section {
+                            SessionSummaryBar(sessions: vm.sessions)
+                                .listRowInsets(EdgeInsets())
+                                .listRowBackground(Color.clear)
                         }
-                        .padding(.vertical, 4)
+                        Section {
+                            ForEach(vm.sessions) { s in SessionRowView(session: s) }
+                        }
                     }
+                    .listStyle(.insetGrouped)
                 }
             }
             .navigationTitle("セッション")
             .safeAreaInset(edge: .top) {
-                Picker("データ源", selection: Binding(
-                    get: { vm.liveMode },
-                    set: { vm.setLiveMode($0) }
-                )) {
-                    Text("ライブ").tag(true)
-                    Text("デモ").tag(false)
+                VStack(spacing: 6) {
+                    Picker("データ源", selection: Binding(
+                        get: { vm.liveMode },
+                        set: { vm.setLiveMode($0) }
+                    )) {
+                        Text("ライブ").tag(true)
+                        Text("デモ").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+
+                    if vm.liveMode && !vm.connectionOnline {
+                        Label("再接続待ち・未送信 \(vm.bufferedCount) 件をバッファ中",
+                              systemImage: "wifi.exclamationmark")
+                            .font(.caption).foregroundStyle(.orange)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
-                .pickerStyle(.segmented)
                 .padding(.horizontal)
                 .padding(.vertical, 6)
                 .background(.bar)
             }
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    if vm.liveMode && vm.isPollingSessions {
+                        HStack(spacing: 5) {
+                            Circle().fill(.green).frame(width: 8, height: 8)
+                            Text("ライブ").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button("更新") { vm.refreshSessions() }
                 }
@@ -148,6 +145,108 @@ struct SessionsView: View {
             .onAppear { vm.startSessionsPolling() }
             .onDisappear { vm.stopSessionsPolling() }
         }
+    }
+}
+
+// MARK: - Dashboard building blocks (B3)
+
+/// Visual identity for the three backend session states, so operators can read
+/// the room at a glance (moving/viewing/hesitating). Mirrors backend SessionState.
+enum SessionStateStyle {
+    static func color(_ state: String) -> Color {
+        switch state {
+        case "hesitating": return .orange   // 迷っている = 声かけ好機
+        case "viewing":    return .green     // 見ている
+        default:            return .blue      // moving / unknown
+        }
+    }
+
+    static func label(_ state: String) -> String {
+        switch state {
+        case "hesitating": return "迷っている"
+        case "viewing":    return "見ている"
+        case "moving":     return "移動中"
+        default:            return state
+        }
+    }
+
+    static func icon(_ state: String) -> String {
+        switch state {
+        case "hesitating": return "hand.raised.fill"
+        case "viewing":    return "eye.fill"
+        default:            return "figure.walk"
+        }
+    }
+}
+
+/// Count-by-state summary shown above the live session list.
+struct SessionSummaryBar: View {
+    let sessions: [SessionRow]
+
+    private func count(_ state: String) -> Int {
+        sessions.filter { $0.state == state }.count
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            stat("合計", sessions.count, .primary)
+            Divider().frame(height: 28)
+            stat(SessionStateStyle.label("viewing"), count("viewing"),
+                 SessionStateStyle.color("viewing"))
+            stat(SessionStateStyle.label("hesitating"), count("hesitating"),
+                 SessionStateStyle.color("hesitating"))
+            stat(SessionStateStyle.label("moving"), count("moving"),
+                 SessionStateStyle.color("moving"))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+    }
+
+    private func stat(_ title: String, _ value: Int, _ color: Color) -> some View {
+        VStack(spacing: 2) {
+            Text("\(value)").font(.title3).bold().foregroundStyle(color)
+            Text(title).font(.caption2).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+/// One live session row with a state-colored pill and key metrics.
+struct SessionRowView: View {
+    let session: SessionRow
+
+    var body: some View {
+        let color = SessionStateStyle.color(session.state)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(session.session_id).font(.headline).lineLimit(1)
+                Spacer()
+                Label(SessionStateStyle.label(session.state),
+                      systemImage: SessionStateStyle.icon(session.state))
+                    .font(.caption).bold()
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(color.opacity(0.18))
+                    .foregroundStyle(color)
+                    .clipShape(Capsule())
+            }
+            Text("位置 (\(session.x), \(session.y))・滞在 \(session.dwell_sec)s・経過 \(session.elapsed_sec)s")
+                .font(.subheadline).foregroundStyle(.secondary)
+            if let shelf = session.shelf_id {
+                Label("棚: \(shelf)", systemImage: "books.vertical").font(.caption)
+            }
+            if !session.appearance_tags.isEmpty {
+                Text(session.appearance_tags.joined(separator: "・"))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if let p = session.profile {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                    Text("嗜好: \(p.tags.joined(separator: "・")) (\(p.confidence))")
+                }
+                .font(.caption).foregroundStyle(.purple)
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 
