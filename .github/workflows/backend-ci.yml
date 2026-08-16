@@ -1,0 +1,41 @@
+name: backend-ci
+
+# Runs the KUMU backend test suite (pytest) on every PR / main push that
+# touches the backend. Deps and tests are network-free (brands are seeded),
+# so no secrets are required.
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # Matches the version the backend was authored/tested on (see
+          # backend/requirements.txt). numpy>=2.5 / fastapi>=0.141 ship 3.14 wheels.
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Run tests
+        run: pytest -q
