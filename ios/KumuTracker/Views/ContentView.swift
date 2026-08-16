@@ -33,6 +33,28 @@ struct TrackerView: View {
                     .frame(width: 120)
             }
 
+            HStack {
+                Text("サーバ")
+                TextField("127.0.0.1:8000", text: $vm.serverHost)
+                    .textFieldStyle(.roundedBorder)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .frame(width: 180)
+                Button("適用") { vm.applyServerHost() }
+                    .buttonStyle(.bordered)
+            }
+
+            // Connection health (B2): online / buffering while disconnected.
+            HStack(spacing: 6) {
+                Image(systemName: vm.connectionOnline
+                      ? "wifi" : "wifi.exclamationmark")
+                Text(vm.connectionOnline
+                     ? "接続OK"
+                     : "再接続待ち・未送信 \(vm.bufferedCount) 件をバッファ中")
+            }
+            .font(.footnote)
+            .foregroundStyle(vm.connectionOnline ? .green : .orange)
+
             Text(vm.isRunning ? "計測中… 検出人数: \(vm.lastCount)" : "停止中")
                 .foregroundStyle(vm.isRunning ? .green : .secondary)
 

@@ -14,6 +14,13 @@ final class TrackingViewModel: ObservableObject {
     @Published var lastCount = 0
     @Published var sessions: [SessionRow] = []
     @Published var isSimulator = false
+    /// Ingest connection health (B2). `false` => posts are failing and being
+    /// buffered for retry; `bufferedCount` is how many batches are waiting.
+    @Published var connectionOnline = true
+    @Published var bufferedCount = 0
+    /// Backend host:port. Editable so a real device can reach the venue PC over
+    /// LAN (the Simulator can use 127.0.0.1, a device cannot).
+    @Published var serverHost = "127.0.0.1:8000"
     /// Dashboard data source. `true` (default) = live sessions derived from real
     /// /ingest data; `false` = backend demo rows (?mock=true) for a dry screen.
     @Published var liveMode = true
@@ -87,6 +94,14 @@ final class TrackingViewModel: ObservableObject {
         refreshSessions()
     }
 
+    /// Apply the edited backend host (e.g. "192.168.1.20:8000") to the client.
+    func applyServerHost() {
+        let trimmed = serverHost.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, let url = URL(string: "http://\(trimmed)") else { return }
+        Task { await api.setBaseURL(url) }
+        refreshSessions()
+    }
+
     /// Start polling GET /sessions so the dashboard reflects state changes
     /// (moving -> viewing -> hesitating) in near real time. Idempotent.
     func startSessionsPolling() {
@@ -109,8 +124,12 @@ final class TrackingViewModel: ObservableObject {
     private func send(_ detections: [Detection]) {
         let batch = IngestBatch(camera_id: cameraId, detections: detections)
         Task {
-            await api.postIngest(batch)
-            await MainActor.run { self.lastCount = detections.count }
+            let outcome = await api.send(batch)
+            await MainActor.run {
+                self.lastCount = detections.count
+                self.connectionOnline = outcome.online
+                self.bufferedCount = outcome.buffered
+            }
         }
     }
 
