@@ -43,18 +43,59 @@ def shelf_at(cell_x: int, cell_y: int, objects: list[dict]) -> str | None:
 # ---------- optional image->grid homography (iOS ingest) ----------
 def compute_homography(image_pts, grid_pts) -> list[list[float]]:
     """Solve 3x3 homography (normalized image 0..1 -> grid cell coords) via DLT.
-    Needs >= 4 correspondences."""
+
+    Needs >= 4 correspondences that are *not degenerate*: a homography is only
+    determined when no three of the source (or destination) points are
+    collinear. A degenerate set makes the DLT matrix rank-deficient and yields a
+    meaningless near-singular H, so we reject it up front with a clear error
+    instead of silently storing garbage.
+    """
     if len(image_pts) < 4 or len(image_pts) != len(grid_pts):
         raise ValueError("need >=4 matched points")
+    if _has_collinear_triple(image_pts):
+        raise ValueError("degenerate configuration: 3+ image points are collinear")
+    if _has_collinear_triple(grid_pts):
+        raise ValueError("degenerate configuration: 3+ grid points are collinear")
     A = []
     for (x, y), (u, v) in zip(image_pts, grid_pts):
         A.append([-x, -y, -1, 0, 0, 0, u * x, u * y, u])
         A.append([0, 0, 0, -x, -y, -1, v * x, v * y, v])
-    _, _, vh = np.linalg.svd(np.asarray(A, float))
+    _, s, vh = np.linalg.svd(np.asarray(A, float))
+    # A well-posed system has a single small singular value (the null space).
+    # If the second-smallest is also ~0 the solution is not unique => degenerate.
+    if s[-2] <= 1e-9 * s[0]:
+        raise ValueError("degenerate configuration: homography is not determined")
     H = vh[-1].reshape(3, 3)
     if abs(H[2, 2]) > 1e-12:
         H = H / H[2, 2]
     return H.tolist()
+
+
+def _has_collinear_triple(pts, eps: float = 1e-9) -> bool:
+    """True if any three of the points are (nearly) collinear. O(n^3), n is tiny."""
+    p = [np.asarray(q, float) for q in pts]
+    n = len(p)
+    for i in range(n):
+        for j in range(i + 1, n):
+            for k in range(j + 1, n):
+                # 2x signed area of triangle (i,j,k) via 2D cross; zero => collinear
+                (ax, ay), (bx, by) = p[j] - p[i], p[k] - p[i]
+                if abs(ax * by - ay * bx) <= eps:
+                    return True
+    return False
+
+
+def reprojection_error(H, image_pts, grid_pts) -> float:
+    """RMS distance (in grid cells) between grid_pts and the image_pts projected
+    through H. A quality signal: ~0 means the correspondences fit the model well;
+    a large value flags noisy or mismatched points."""
+    Hm = np.asarray(H, float)
+    sq = 0.0
+    for (x, y), (u, v) in zip(image_pts, grid_pts):
+        p = Hm @ np.array([x, y, 1.0])
+        w = p[2] if abs(p[2]) > 1e-12 else 1e-12
+        sq += (p[0] / w - u) ** 2 + (p[1] / w - v) ** 2
+    return float(np.sqrt(sq / len(image_pts)))
 
 
 def project_to_grid(H: list[list[float]], x: float, y: float) -> tuple[int, int]:

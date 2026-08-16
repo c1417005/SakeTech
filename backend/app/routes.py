@@ -183,23 +183,45 @@ def post_calibrate(req: CalibrationRequest, _=Depends(require_admin)):
     """
     if len(req.image_points) != len(req.grid_points):
         raise HTTPException(400, "image_points and grid_points length mismatch")
+    image_pts = [tuple(p) for p in req.image_points]
+    grid_pts = [tuple(p) for p in req.grid_points]
     try:
-        H = geometry.compute_homography(
-            [tuple(p) for p in req.image_points],
-            [tuple(p) for p in req.grid_points],
-        )
+        H = geometry.compute_homography(image_pts, grid_pts)
     except ValueError as e:
         raise HTTPException(400, f"calibration failed: {e}")
-    db.save_calibration(req.camera_id, H)
-    return {"camera_id": req.camera_id, "homography": H}
+    err = geometry.reprojection_error(H, image_pts, grid_pts)
+    # Persist the raw correspondences alongside the matrix so the calibration can
+    # be re-displayed / edited / re-solved later, plus the fit quality.
+    record = {
+        "matrix": H,
+        "image_points": req.image_points,
+        "grid_points": req.grid_points,
+        "reprojection_error": err,
+        "updated_at": time.time(),
+    }
+    db.save_calibration_record(req.camera_id, record)
+    return {
+        "camera_id": req.camera_id,
+        "homography": H,
+        "reprojection_error": err,
+        "image_points": req.image_points,
+        "grid_points": req.grid_points,
+    }
 
 
 @router.get("/admin/calibrate/{camera_id}")
 def get_calibrate(camera_id: str, _=Depends(require_admin)):
-    H = db.load_calibration(camera_id)
-    if H is None:
+    rec = db.load_calibration_record(camera_id)
+    if rec is None:
         raise HTTPException(404, "no calibration for camera")
-    return {"camera_id": camera_id, "homography": H}
+    return {
+        "camera_id": camera_id,
+        "homography": rec["matrix"],
+        "reprojection_error": rec.get("reprojection_error"),
+        "image_points": rec.get("image_points"),
+        "grid_points": rec.get("grid_points"),
+        "updated_at": rec.get("updated_at"),
+    }
 
 
 # ---------- brands (sakenowa / Ishikawa) ----------

@@ -35,5 +35,9 @@ python tests/test_api.py                  # API e2e（銘柄はseedするので�
 | GET | `/brands`, `/brands/{id}` | 石川県の銘柄（棚詳細用） |
 | GET | `/attribution` | さけのわ帰属表示 |
 | POST | `/admin/sync-sakenowa` | さけのわ再取得 |
+| POST | `/admin/calibrate` | カメラごとの対応点(4点以上)から homography を計算・保存 |
+| GET | `/admin/calibrate/{camera_id}` | 保存済みの校正(行列＋対応点＋再投影誤差)を読み戻し |
 
-詳細: `../docs/api-contract.md`, `../docs/backend-design.md`。
+`/admin/*` は `KUMU_ADMIN_AUTH` が有効なときのみ Bearer トークンを要求（既定 off）。
+
+詳細: `../docs/api-contract.md`, `../docs/backend-design.md`, `docs/homography-calibration.md`。
