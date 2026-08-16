@@ -14,8 +14,10 @@ import time
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import ValidationError
 
-from app import db, sakenowa
-from app.models import MapData, Shelf, Marker, Session, IngestBatch, Brand
+from app import db, geometry, sakenowa
+from app.models import (
+    MapData, Shelf, Marker, Session, IngestBatch, Brand, CalibrationRequest,
+)
 from app.sessions import SessionStore, DemoSimulator
 
 router = APIRouter()
@@ -75,26 +77,65 @@ def get_sessions(mock: bool | None = Query(default=None)):
     return live_store.sessions()
 
 
+def _clamp_cell(cx: int, cy: int, gw: int, gh: int) -> tuple[int, int]:
+    return max(0, min(gw - 1, cx)), max(0, min(gh - 1, cy))
+
+
 # ---------- iOS ingest ----------
 @router.post("/ingest")
 def post_ingest(batch: IngestBatch):
     """iOS sends normalized detections; server maps to grid + updates sessions.
 
-    MVP mapping: normalized (0..1) -> grid cell by scaling to grid size. Swap for
-    a per-camera homography (geometry.compute_homography) once calibration UI
-    exists. [TBD: homography calibration source]
+    Mapping: if a per-camera homography has been calibrated (POST /admin/calibrate),
+    project normalized image coords -> grid cells through it; otherwise fall back to
+    the MVP naive scaling (normalized * grid size). Behavior is unchanged for
+    uncalibrated cameras.
     """
     m = db.load_map() or {"objects": [], "grid": {"width": 10, "height": 8}}
     gw = m.get("grid", {}).get("width", 10)
     gh = m.get("grid", {}).get("height", 8)
     objects = m.get("objects", [])
     now = time.time()
+    H = db.load_calibration(batch.camera_id)  # None => naive fallback
     for d in batch.detections:
-        cx = min(gw - 1, int(d.x * gw))
-        cy = min(gh - 1, int(d.y * gh))
+        if H is not None:
+            cx, cy = geometry.project_to_grid(H, d.x, d.y)
+        else:
+            cx, cy = int(d.x * gw), int(d.y * gh)
+        cx, cy = _clamp_cell(cx, cy, gw, gh)
         live_store.observe(objects, f"sess-{d.track_id}", cx, cy, d.t or now,
                            appearance_tags=d.appearance_tags)
-    return {"accepted": len(batch.detections)}
+    return {"accepted": len(batch.detections), "calibrated": H is not None}
+
+
+# ---------- camera calibration (backend-owned; does not touch map.ts) ----------
+@router.post("/admin/calibrate")
+def post_calibrate(req: CalibrationRequest):
+    """Solve + persist a per-camera image->grid homography from >=4 point pairs.
+
+    [TBD] The *source* of these correspondences (a calibration UI / who marks the
+    points) is still open; this endpoint is the backend hook so the mapping is
+    ready and testable without changing the frontend /map contract.
+    """
+    if len(req.image_points) != len(req.grid_points):
+        raise HTTPException(400, "image_points and grid_points length mismatch")
+    try:
+        H = geometry.compute_homography(
+            [tuple(p) for p in req.image_points],
+            [tuple(p) for p in req.grid_points],
+        )
+    except ValueError as e:
+        raise HTTPException(400, f"calibration failed: {e}")
+    db.save_calibration(req.camera_id, H)
+    return {"camera_id": req.camera_id, "homography": H}
+
+
+@router.get("/admin/calibrate/{camera_id}")
+def get_calibrate(camera_id: str):
+    H = db.load_calibration(camera_id)
+    if H is None:
+        raise HTTPException(404, "no calibration for camera")
+    return {"camera_id": camera_id, "homography": H}
 
 
 # ---------- brands (sakenowa / Ishikawa) ----------

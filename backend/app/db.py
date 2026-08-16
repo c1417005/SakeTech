@@ -42,6 +42,25 @@ def load_map() -> dict | None:
         return json.loads(row["v"]) if row else None
 
 
+# ----- per-camera image->grid homography calibration (key='calib:<camera_id>') -----
+# Optional and backend-owned: absence means /ingest falls back to naive scaling.
+def save_calibration(camera_id: str, matrix: list[list[float]]):
+    with _conn() as c:
+        c.execute(
+            "INSERT INTO kv(k, v) VALUES(?, ?) "
+            "ON CONFLICT(k) DO UPDATE SET v=excluded.v",
+            (f"calib:{camera_id}", json.dumps(matrix)),
+        )
+
+
+def load_calibration(camera_id: str) -> list[list[float]] | None:
+    with _conn() as c:
+        row = c.execute(
+            "SELECT v FROM kv WHERE k=?", (f"calib:{camera_id}",)
+        ).fetchone()
+        return json.loads(row["v"]) if row else None
+
+
 # ----- brands cache -----
 def upsert_brands(brands: list[dict]):
     with _conn() as c:

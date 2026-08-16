@@ -83,6 +83,20 @@ class IngestBatch(BaseModel):
     detections: list[Detection]
 
 
+# ---------- camera calibration (POST /admin/calibrate) ----------
+class CalibrationRequest(BaseModel):
+    """Point correspondences to solve a per-camera image->grid homography.
+
+    Backend-owned and opt-in: this does NOT change the /map (map.ts) contract.
+    image_points are normalized (0..1) image coords; grid_points are the matching
+    grid-cell coords. Need >= 4 non-collinear pairs.
+    [TBD: which UI/source produces these correspondences — see PR/report.]
+    """
+    camera_id: str = "cam-1"
+    image_points: list[tuple[float, float]] = Field(..., min_length=4)
+    grid_points: list[tuple[float, float]] = Field(..., min_length=4)
+
+
 # ---------- Brands (GET /brands, GET /brands/{id}) ----------
 Type4 = Literal["薫酒", "爽酒", "醇酒", "熟酒"]
 
