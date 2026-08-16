@@ -116,3 +116,26 @@ class Brand(BaseModel):
     type4: Optional[Type4] = None
     easy_tags: list[str] = Field(default_factory=list)
     has_flavor: bool = False
+
+
+# ---------- Auth (POST /auth/register, /auth/login; GET /auth/me) ----------
+# Optional/non-blocking login. Public endpoints never require these.
+class RegisterRequest(BaseModel):
+    username: str = Field(..., min_length=1, max_length=64)
+    password: str = Field(..., min_length=1, max_length=256)
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+
+
+class AuthToken(BaseModel):
+    token: str
+    token_type: Literal["bearer"] = "bearer"
+    user: UserOut

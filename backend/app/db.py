@@ -24,6 +24,21 @@ def init_db():
             "CREATE TABLE IF NOT EXISTS brands "
             "(brand_id INTEGER PRIMARY KEY, data TEXT NOT NULL)"
         )
+        # Additive: optional login. Absence of rows changes nothing for the
+        # public endpoints; these tables only back /auth/* and optional admin.
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS users ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "username TEXT NOT NULL UNIQUE, "
+            "password_hash TEXT NOT NULL, "
+            "created_at REAL NOT NULL)"
+        )
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS auth_tokens ("
+            "token TEXT PRIMARY KEY, "
+            "user_id INTEGER NOT NULL, "
+            "created_at REAL NOT NULL)"
+        )
 
 
 # ----- map (single map, key='map') -----
@@ -89,3 +104,58 @@ def list_brands(q: str | None = None) -> list[dict]:
 def brand_count() -> int:
     with _conn() as c:
         return c.execute("SELECT COUNT(*) AS n FROM brands").fetchone()["n"]
+
+
+# ----- users / auth tokens (optional login) -----
+def create_user(username: str, password_hash: str, created_at: float) -> dict | None:
+    """Insert a user. Returns the row dict, or None if the username is taken."""
+    try:
+        with _conn() as c:
+            cur = c.execute(
+                "INSERT INTO users(username, password_hash, created_at) "
+                "VALUES(?, ?, ?)",
+                (username, password_hash, created_at),
+            )
+            return {"id": cur.lastrowid, "username": username}
+    except sqlite3.IntegrityError:
+        return None
+
+
+def get_user_by_username(username: str) -> dict | None:
+    with _conn() as c:
+        row = c.execute(
+            "SELECT id, username, password_hash FROM users WHERE username=?",
+            (username,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def get_user_by_id(user_id: int) -> dict | None:
+    with _conn() as c:
+        row = c.execute(
+            "SELECT id, username FROM users WHERE id=?", (user_id,)
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def create_token(token: str, user_id: int, created_at: float):
+    with _conn() as c:
+        c.execute(
+            "INSERT INTO auth_tokens(token, user_id, created_at) VALUES(?, ?, ?)",
+            (token, user_id, created_at),
+        )
+
+
+def get_user_id_for_token(token: str | None) -> int | None:
+    if not token:
+        return None
+    with _conn() as c:
+        row = c.execute(
+            "SELECT user_id FROM auth_tokens WHERE token=?", (token,)
+        ).fetchone()
+        return row["user_id"] if row else None
+
+
+def delete_token(token: str):
+    with _conn() as c:
+        c.execute("DELETE FROM auth_tokens WHERE token=?", (token,))

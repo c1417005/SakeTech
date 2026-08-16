@@ -11,12 +11,13 @@ from __future__ import annotations
 import os
 import time
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import ValidationError
 
-from app import config, db, geometry, sakenowa
+from app import auth, config, db, geometry, sakenowa
 from app.models import (
     MapData, Shelf, Marker, Session, IngestBatch, Brand, CalibrationRequest,
+    RegisterRequest, LoginRequest, UserOut, AuthToken,
 )
 from app.sessions import SessionStore, DemoSimulator
 
@@ -25,6 +26,30 @@ router = APIRouter()
 # In-memory live sessions (fed by /ingest). Demo mode is closed-form.
 live_store = SessionStore()
 _demo_start = time.time()
+
+
+# ---------- auth dependencies (optional / non-blocking) ----------
+def current_user(authorization: str | None = Header(default=None)) -> dict:
+    """Resolve the logged-in user from a bearer token, or 401. Used by /auth/me."""
+    uid = db.get_user_id_for_token(auth.bearer_token(authorization))
+    user = db.get_user_by_id(uid) if uid is not None else None
+    if user is None:
+        raise HTTPException(401, "authentication required")
+    return user
+
+
+def require_admin(authorization: str | None = Header(default=None)):
+    """Gate /admin/* ONLY when KUMU_ADMIN_AUTH is enabled.
+
+    Disabled (default): a no-op, so admin endpoints behave exactly as before and
+    nothing in the running product is blocked. Enabled: require a valid token.
+    """
+    if not config.admin_auth_enabled():
+        return None
+    uid = db.get_user_id_for_token(auth.bearer_token(authorization))
+    if uid is None:
+        raise HTTPException(401, "authentication required")
+    return uid
 
 
 def _mock_enabled(mock: bool | None) -> bool:
@@ -47,6 +72,41 @@ def _validate_map(body: dict) -> dict:
     except (ValidationError, ValueError) as e:
         raise HTTPException(400, f"invalid map: {e}")
     return body
+
+
+# ---------- auth (optional login; public endpoints never require it) ----------
+@router.post("/auth/register", response_model=AuthToken)
+def register(req: RegisterRequest):
+    now = time.time()
+    user = db.create_user(req.username, auth.hash_password(req.password), now)
+    if user is None:
+        raise HTTPException(409, "username already taken")
+    token = auth.new_token()
+    db.create_token(token, user["id"], now)
+    return AuthToken(token=token, user=UserOut(**user))
+
+
+@router.post("/auth/login", response_model=AuthToken)
+def login(req: LoginRequest):
+    user = db.get_user_by_username(req.username)
+    if user is None or not auth.verify_password(req.password, user["password_hash"]):
+        raise HTTPException(401, "invalid username or password")
+    token = auth.new_token()
+    db.create_token(token, user["id"], time.time())
+    return AuthToken(token=token, user=UserOut(id=user["id"], username=user["username"]))
+
+
+@router.get("/auth/me", response_model=UserOut)
+def me(user: dict = Depends(current_user)):
+    return UserOut(**user)
+
+
+@router.post("/auth/logout")
+def logout(authorization: str | None = Header(default=None)):
+    token = auth.bearer_token(authorization)
+    if token:
+        db.delete_token(token)
+    return {"ok": True}
 
 
 # ---------- map ----------
@@ -114,7 +174,7 @@ def post_ingest(batch: IngestBatch):
 
 # ---------- camera calibration (backend-owned; does not touch map.ts) ----------
 @router.post("/admin/calibrate")
-def post_calibrate(req: CalibrationRequest):
+def post_calibrate(req: CalibrationRequest, _=Depends(require_admin)):
     """Solve + persist a per-camera image->grid homography from >=4 point pairs.
 
     [TBD] The *source* of these correspondences (a calibration UI / who marks the
@@ -135,7 +195,7 @@ def post_calibrate(req: CalibrationRequest):
 
 
 @router.get("/admin/calibrate/{camera_id}")
-def get_calibrate(camera_id: str):
+def get_calibrate(camera_id: str, _=Depends(require_admin)):
     H = db.load_calibration(camera_id)
     if H is None:
         raise HTTPException(404, "no calibration for camera")
@@ -171,6 +231,6 @@ def attribution():
 
 # ---------- admin ----------
 @router.post("/admin/sync-sakenowa")
-def sync_sakenowa(force: bool = Query(default=True)):
+def sync_sakenowa(force: bool = Query(default=True), _=Depends(require_admin)):
     n = sakenowa.sync(force=force)
     return {"stored_brands": n}
