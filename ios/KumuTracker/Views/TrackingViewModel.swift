@@ -14,6 +14,11 @@ final class TrackingViewModel: ObservableObject {
     @Published var lastCount = 0
     @Published var sessions: [SessionRow] = []
     @Published var isSimulator = false
+    /// Dashboard data source. `true` (default) = live sessions derived from real
+    /// /ingest data; `false` = backend demo rows (?mock=true) for a dry screen.
+    @Published var liveMode = true
+    /// True while the sessions dashboard is auto-refreshing.
+    @Published var isPollingSessions = false
     /// Selected tab. Overridable at launch via env `KUMU_START=sessions`
     /// (useful for demos / screenshots without tapping).
     @Published var selectedTab = 0
@@ -24,11 +29,19 @@ final class TrackingViewModel: ObservableObject {
     private let tracker = PersonTracker()
     private var mockTimer: Timer?
     private var mockTick = 0
+    private var sessionsTimer: Timer?
+    /// How often the dashboard polls GET /sessions while visible.
+    private let sessionsPollInterval: TimeInterval = 2.0
 
     init() {
         #if targetEnvironment(simulator)
         isSimulator = true
         #endif
+
+        // Demo/screenshot override: KUMU_DEMO=1 shows backend mock rows.
+        if ProcessInfo.processInfo.environment["KUMU_DEMO"] == "1" {
+            liveMode = false
+        }
 
         if ProcessInfo.processInfo.environment["KUMU_START"] == "sessions" {
             selectedTab = 1
@@ -57,12 +70,38 @@ final class TrackingViewModel: ObservableObject {
         }
     }
 
-    /// Loads the backend-derived session dashboard (demo rows via mock=true).
+    /// Loads the session dashboard. Live by default (real /ingest-derived data);
+    /// backend demo rows only when `liveMode` is off.
     func refreshSessions() {
+        let wantMock = !liveMode
         Task {
-            let rows = await api.getSessions(mock: true)
+            let rows = await api.getSessions(mock: wantMock)
             await MainActor.run { self.sessions = rows }
         }
+    }
+
+    /// Flip live vs demo and reload immediately.
+    func setLiveMode(_ live: Bool) {
+        guard live != liveMode else { return }
+        liveMode = live
+        refreshSessions()
+    }
+
+    /// Start polling GET /sessions so the dashboard reflects state changes
+    /// (moving -> viewing -> hesitating) in near real time. Idempotent.
+    func startSessionsPolling() {
+        refreshSessions()
+        guard sessionsTimer == nil else { return }
+        isPollingSessions = true
+        sessionsTimer = Timer.scheduledTimer(withTimeInterval: sessionsPollInterval,
+                                             repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.refreshSessions() }
+        }
+    }
+
+    func stopSessionsPolling() {
+        sessionsTimer?.invalidate(); sessionsTimer = nil
+        isPollingSessions = false
     }
 
     // MARK: - Private

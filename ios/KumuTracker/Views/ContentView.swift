@@ -53,7 +53,8 @@ struct TrackerView: View {
     }
 }
 
-/// Backend session dashboard: shows rows from GET /sessions?mock=true.
+/// Backend session dashboard. Live by default (real /ingest-derived data, polled
+/// every ~2s); a toggle switches to backend demo rows for a dry screen.
 struct SessionsView: View {
     @ObservedObject var vm: TrackingViewModel
 
@@ -64,7 +65,9 @@ struct SessionsView: View {
                     ContentUnavailableView {
                         Label("セッションなし", systemImage: "person.3")
                     } description: {
-                        Text("「更新」でバックエンドのデモデータを取得します")
+                        Text(vm.liveMode
+                             ? "計測を開始すると、来店者が実データで表示されます"
+                             : "「更新」でバックエンドのデモデータを取得します")
                     }
                 } else {
                     List(vm.sessions) { s in
@@ -101,12 +104,27 @@ struct SessionsView: View {
                 }
             }
             .navigationTitle("セッション")
+            .safeAreaInset(edge: .top) {
+                Picker("データ源", selection: Binding(
+                    get: { vm.liveMode },
+                    set: { vm.setLiveMode($0) }
+                )) {
+                    Text("ライブ").tag(true)
+                    Text("デモ").tag(false)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.vertical, 6)
+                .background(.bar)
+            }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button("更新") { vm.refreshSessions() }
                 }
             }
-            .onAppear { vm.refreshSessions() }
+            // Live: poll while visible so state changes appear in near real time.
+            .onAppear { vm.startSessionsPolling() }
+            .onDisappear { vm.stopSessionsPolling() }
         }
     }
 }
