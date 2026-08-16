@@ -9,7 +9,15 @@ import Combine
 /// and network path are all exercisable without hardware.
 @MainActor
 final class TrackingViewModel: ObservableObject {
-    @Published var cameraId: String = "cam-1"
+    private enum Keys {
+        static let serverHost = "kumu.serverHost"
+        static let cameraId = "kumu.cameraId"
+    }
+
+    /// Persisted so operators don't re-enter it each launch (C2).
+    @Published var cameraId: String = "cam-1" {
+        didSet { UserDefaults.standard.set(cameraId, forKey: Keys.cameraId) }
+    }
     @Published var isRunning = false
     @Published var lastCount = 0
     @Published var sessions: [SessionRow] = []
@@ -19,8 +27,10 @@ final class TrackingViewModel: ObservableObject {
     @Published var connectionOnline = true
     @Published var bufferedCount = 0
     /// Backend host:port. Editable so a real device can reach the venue PC over
-    /// LAN (the Simulator can use 127.0.0.1, a device cannot).
-    @Published var serverHost = "127.0.0.1:8000"
+    /// LAN (the Simulator can use 127.0.0.1, a device cannot). Persisted (C2).
+    @Published var serverHost = "127.0.0.1:8000" {
+        didSet { UserDefaults.standard.set(serverHost, forKey: Keys.serverHost) }
+    }
     /// Dashboard data source. `true` (default) = live sessions derived from real
     /// /ingest data; `false` = backend demo rows (?mock=true) for a dry screen.
     @Published var liveMode = true
@@ -45,6 +55,19 @@ final class TrackingViewModel: ObservableObject {
         isSimulator = true
         #endif
 
+        // Restore persisted operator settings (C2).
+        let defaults = UserDefaults.standard
+        if let host = defaults.string(forKey: Keys.serverHost), !host.isEmpty {
+            serverHost = host
+        }
+        if let cam = defaults.string(forKey: Keys.cameraId), !cam.isEmpty {
+            cameraId = cam
+        }
+        // Point the client at the restored host (default is unchanged if none).
+        if let url = Self.url(forHost: serverHost) {
+            Task { await api.setBaseURL(url) }
+        }
+
         // Demo/screenshot override: KUMU_DEMO=1 shows backend mock rows.
         if ProcessInfo.processInfo.environment["KUMU_DEMO"] == "1" {
             liveMode = false
@@ -64,17 +87,28 @@ final class TrackingViewModel: ObservableObject {
 
     func toggle() {
         if isRunning {
-            camera.stop()
-            mockTimer?.invalidate(); mockTimer = nil
+            stopProducers()
             isRunning = false
         } else {
-            if isSimulator {
-                startMockStream()
-            } else {
-                camera.configure(); camera.start()
-            }
+            startProducers()
             isRunning = true
         }
+    }
+
+    // MARK: - App lifecycle (C2)
+
+    /// Called when the app leaves the foreground: stop polling and pause the
+    /// camera/mock producers so we don't drain battery or post stale data while
+    /// backgrounded. `isRunning` is preserved so `resume()` can restore it.
+    func pause() {
+        stopSessionsPolling()
+        if isRunning { stopProducers() }
+    }
+
+    /// Called when the app returns to the foreground: resume whatever was active.
+    func resume() {
+        if isRunning { startProducers() }
+        if selectedTab == 1 { startSessionsPolling() }
     }
 
     /// Loads the session dashboard. Live by default (real /ingest-derived data);
@@ -96,10 +130,17 @@ final class TrackingViewModel: ObservableObject {
 
     /// Apply the edited backend host (e.g. "192.168.1.20:8000") to the client.
     func applyServerHost() {
-        let trimmed = serverHost.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, let url = URL(string: "http://\(trimmed)") else { return }
+        serverHost = serverHost.trimmingCharacters(in: .whitespaces)
+        guard let url = Self.url(forHost: serverHost) else { return }
         Task { await api.setBaseURL(url) }
         refreshSessions()
+    }
+
+    /// Build an http URL from a "host:port" string, or nil if empty/invalid.
+    private static func url(forHost host: String) -> URL? {
+        let trimmed = host.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+        return URL(string: "http://\(trimmed)")
     }
 
     /// Start polling GET /sessions so the dashboard reflects state changes
@@ -120,6 +161,21 @@ final class TrackingViewModel: ObservableObject {
     }
 
     // MARK: - Private
+
+    /// Start the detection source (real camera on device, synthetic in Simulator).
+    private func startProducers() {
+        if isSimulator {
+            startMockStream()
+        } else {
+            camera.configure(); camera.start()
+        }
+    }
+
+    /// Stop the detection source without changing `isRunning`.
+    private func stopProducers() {
+        camera.stop()
+        mockTimer?.invalidate(); mockTimer = nil
+    }
 
     private func send(_ detections: [Detection]) {
         let batch = IngestBatch(camera_id: cameraId, detections: detections)

@@ -5,6 +5,7 @@ import SwiftUI
 /// visible even in the Simulator where there is no camera.
 struct ContentView: View {
     @StateObject private var vm = TrackingViewModel()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         TabView(selection: $vm.selectedTab) {
@@ -14,6 +15,14 @@ struct ContentView: View {
             SessionsView(vm: vm)
                 .tabItem { Label("セッション", systemImage: "list.bullet.rectangle") }
                 .tag(1)
+        }
+        // Pause camera/polling in the background, resume on return (C2).
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .active:                vm.resume()
+            case .background, .inactive: vm.pause()
+            @unknown default:            break
+            }
         }
     }
 }
