@@ -1,0 +1,16 @@
+# --- backend (Python) ---
+backend/.venv/
+__pycache__/
+*.pyc
+backend/kumu.db
+backend/*.db
+.pytest_cache/
+
+# --- iOS / Xcode ---
+ios/**/xcuserdata/
+ios/**/DerivedData/
+*.xcuserstate
+build/
+
+# --- macOS ---
+.DS_Store
